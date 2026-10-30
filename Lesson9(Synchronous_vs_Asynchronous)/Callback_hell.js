@@ -1,4 +1,5 @@
-// Callback hell is a situation where callbacks are nested within other callbacks several levels deep, making the code hard to read and maintain.
+/* Callback Hell occurs when multiple callbacks are nested inside one another to handle asynchronous tasks. 
+This makes the code difficult to read, understand, and maintain. */
 setTimeout(()=>{
     console.log('1');
     setTimeout(()=>{
