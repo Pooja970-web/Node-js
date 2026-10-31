@@ -4,7 +4,7 @@ async function readFiledata(){
     console.log(data);}
     catch(error){
         console.log("File read nhi ho rhi h!");
-        console.log(error.message);
+        console.log(error.message);// helpful in debugging
     }
 }
 readFiledata();
