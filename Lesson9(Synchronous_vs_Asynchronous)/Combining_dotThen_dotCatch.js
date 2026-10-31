@@ -11,5 +11,4 @@ myPromise.then((message)=>{
 });
 myPromise.catch((error)=>{ 
     console.log(error);
-}
-);
+}   );
