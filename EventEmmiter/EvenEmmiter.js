@@ -28,3 +28,8 @@ Notice that the function is registered here; it has not been called yet./myEmitt
     console.log("Someone is at the door!");
 }   );
 myEmitter.emit("doorbell");//We trigger the bell event. The registered function runs, so the message appears.
+const event=new EventEmitter();//We create another object that can listen for and trigger events.
+event.on("Login",()=>{
+    console.log("UserLoged in!");
+});
+event.emit("Login");//We trigger the Login event. The registered function runs, so the message appears.
