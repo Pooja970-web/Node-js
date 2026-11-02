@@ -5,3 +5,5 @@ const server=new http.createServer((req,res)=>{//We create a server object that 
 server.listen(3000,()=>{//We tell the server to listen on port 3000 and print a message when it starts listening.
     console.log("Server is running on port 3000");
 });
+// req--information sent by the client to the server.
+// res--information sent by the server to the client.
