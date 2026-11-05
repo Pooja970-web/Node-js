@@ -1,9 +1,9 @@
 const express = require("express");
 const app = express();
 // Custom Middleware
-const myMiddleware = (req, res, next) => {
+const myMiddleware = (req, res, next) => {//Incoming request
     console.log("Middleware is running!");
-    next();
+    next();//Moves control to the next middleware or route
 };
 // Register Middleware
 app.use(myMiddleware);
