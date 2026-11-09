@@ -1,14 +1,11 @@
-
 const http = require("http");
 
 const myHttp = http.createServer((req, res) => {
     if (req.method === "POST") {
-        let body = "";
-
+        let body = " ";
         req.on("data", (chunk) => {
             body += chunk;
         });
-
         req.on("end", () => {
             console.log("Data received from client:", body);
             res.end("Data received successfully");
