@@ -2,13 +2,11 @@ const express = require("express");
 
 const app = express();
 
-// Middleware
+// Custom Middleware
 app.use((req, res, next) => {
     console.log("Request received:", req.method, req.url);
-
     next();
 });
-
 // Route
 app.get("/", (req, res) => {
     res.send("Home Page");
