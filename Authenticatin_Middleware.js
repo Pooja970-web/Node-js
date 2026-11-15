@@ -1,5 +1,5 @@
 const exopress=require('express');
-const app=exopress();
+const app=express();
 const authMiddleware=(req,res,next)=>{
     const isLoggein=true;
     if(isLoggein){
