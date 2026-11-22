@@ -1,4 +1,12 @@
-
+ //JWT Authentication Middleware & Protected Routes
+ /*  
+ User login करेगा।  
+ User /profile खोलना चाहेगा।
+ Server उसका JWT Token check करेगा।
+ Token सही है तो Profile खुलेगी।
+ Token गलत या missing है तो access नहीं मिलेगा।
+  */
+ 
 const express = require("express");
 const app = express();
 
@@ -55,14 +63,19 @@ const authMiddleware = (req, res, next) => {
     try {
         // Get token from request header
         const authHeader = req.headers.authorization;
+        //इसका काम है User की Request से Authorization Header प्राप्त करना।
+//लेकिन पहले समझिए कि Header क्या होता है।
 
+//जब आप Postman से किसी API को Request भेजती हैं, तो Request के साथ कुछ अतिरिक्त जानकारी भी भेज सकती हैं। इन्हें Headers कहते हैं।
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return res.status(401).json({
                 message: "Token not provided"
             });
         }
 
-        const token = authHeader.split(" ")[1];
+        const token = authHeader.
+     split(" ")[1];
+//Bearer abc123xyz
 
         // Verify token
         const decoded = jwt.verify(
