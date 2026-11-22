@@ -3,14 +3,33 @@ require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 
 const app = express();
 
 // JSON data पढ़ने के लिए
 app.use(express.json());
+// MongoDB से connect करना
+mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => console.log("MongoDB connected ✅"))
+    .catch((error) => console.log("MongoDB error ❌", error.message));
 
+// User का ढाँचा (Schema)
+const userSchema = new mongoose.Schema({
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    password: {
+        type: String,
+        required: true
+    }
+});
 
-const users = [];
+// Model (मशीन)
+const User = mongoose.model("User", userSchema);
 
 
 // ---------------------------------------------
@@ -21,15 +40,15 @@ app.post("/register", async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // दोनों भेजे हैं या नहीं?
+        // 1. दोनों भेजे हैं या नहीं?
         if (!email || !password) {
             return res.status(400).json({
                 message: "Email and password are required"
             });
         }
 
-        // यह email पहले से है क्या?
-        const existingUser = users.find((u) => u.email === email);
+        // 2. यह email database में पहले से है क्या?
+        const existingUser = await User.findOne({ email: email });
 
         if (existingUser) {
             return res.status(400).json({
@@ -37,21 +56,22 @@ app.post("/register", async (req, res) => {
             });
         }
 
-        // Password का hash बनाओ
+        // 3. Password का hash बनाओ
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // User को सेव करो
-        users.push({
-            id: users.length + 1,
+        // 4. Database में सेव करो
+        await User.create({
             email: email,
             password: hashedPassword
         });
 
+        // 5. जवाब दो
         res.status(201).json({
             message: "User registered successfully"
         });
 
     } catch (error) {
+        console.log(error.message);
         res.status(500).json({
             message: "Server error"
         });
@@ -68,7 +88,7 @@ app.post("/login", async (req, res) => {
         const { email, password } = req.body;
 
         // इस email वाला user ढूँढो
-        const user = users.find((u) => u.email === email);
+        const user = await User.findOne({ email: email });
 
         if (!user) {
             return res.status(401).json({
