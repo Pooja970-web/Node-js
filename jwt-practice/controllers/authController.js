@@ -1,24 +1,27 @@
+
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// ---------------------------------------------
-// REGISTER
-// ---------------------------------------------
-const register = async (req, res) => {
+const {
+    generateAccessToken,
+    generateRefreshToken
+} = require("../utils/generateToken");
 
+// ---------------------------------------------
+// REGISTER (Your existing code)
+// ---------------------------------------------
+
+const register = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // दोनों भेजे हैं या नहीं?
         if (!email || !password) {
             return res.status(400).json({
                 message: "Email and password are required"
             });
         }
 
-        // यह email database में पहले से है क्या?
-        const existingUser = await User.findOne({ email: email });
+        const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             return res.status(400).json({
@@ -26,12 +29,10 @@ const register = async (req, res) => {
             });
         }
 
-        // Password का hash बनाओ
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Database में सेव करो
         await User.create({
-            email: email,
+            email,
             password: hashedPassword
         });
 
@@ -48,15 +49,15 @@ const register = async (req, res) => {
 };
 
 // ---------------------------------------------
-// LOGIN
+// LOGIN (Updated with two JWT tokens)
 // ---------------------------------------------
-const login = async (req, res) => {
 
+const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // इस email वाला user ढूँढो
-        const user = await User.findOne({ email: email });
+        // Step 1: Find user
+        const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(401).json({
@@ -64,8 +65,11 @@ const login = async (req, res) => {
             });
         }
 
-        // Password जाँचो
-        const isMatch = await bcrypt.compare(password, user.password);
+        // Step 2: Verify password
+        const isMatch = await bcrypt.compare(
+            password,
+            user.password
+        );
 
         if (!isMatch) {
             return res.status(401).json({
@@ -73,24 +77,37 @@ const login = async (req, res) => {
             });
         }
 
-        // Token बनाओ
-        const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: "1h" }
-        );
+        // Step 3: Generate Access Token
+        const accessToken = generateAccessToken(user);
 
+        // Step 4: Generate Refresh Token
+        const refreshToken = generateRefreshToken(user);
+
+        // Step 5: Store Refresh Token in HttpOnly Cookie
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            path: "/api/auth/refresh"
+        });
+
+        // Step 6: Send response
         res.status(200).json({
             message: "Login successful",
-            token: token
+            accessToken
         });
 
     } catch (error) {
         console.log(error.message);
+
         res.status(500).json({
             message: "Server error"
         });
     }
 };
 
-module.exports = { register, login };
+module.exports = {
+    register,
+    login
+};
