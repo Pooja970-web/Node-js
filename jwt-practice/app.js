@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const User = require("./models/User");
+const noteRoutes = require("./routes/noteRoutes");
 const authMiddleware = require("./middleware/authMiddleware");
 const { register, login } = require("./controllers/authController");
 const app = express();
@@ -20,6 +21,7 @@ mongoose
    
 
 app.use("/", authRoutes);
+app.use("/notes", noteRoutes);
 
 // ---------------------------------------------
 // Server शुरू करो
