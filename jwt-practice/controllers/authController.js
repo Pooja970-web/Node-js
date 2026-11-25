@@ -1,16 +1,10 @@
-
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-const {
-    generateAccessToken,
-    generateRefreshToken
-} = require("../utils/generateToken");
-
 // ---------------------------------------------
-// REGISTER (Your existing code)
+// REGISTER
 // ---------------------------------------------
-
 const register = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -49,14 +43,12 @@ const register = async (req, res) => {
 };
 
 // ---------------------------------------------
-// LOGIN (Updated with two JWT tokens)
+// LOGIN (access token + refresh token)
 // ---------------------------------------------
-
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Step 1: Find user
         const user = await User.findOne({ email });
 
         if (!user) {
@@ -65,11 +57,7 @@ const login = async (req, res) => {
             });
         }
 
-        // Step 2: Verify password
-        const isMatch = await bcrypt.compare(
-            password,
-            user.password
-        );
+        const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
             return res.status(401).json({
@@ -77,37 +65,109 @@ const login = async (req, res) => {
             });
         }
 
-        // Step 3: Generate Access Token
-        const accessToken = generateAccessToken(user);
+        // Access token (15 मिनट)
+        const accessToken = jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "15m" }
+        );
 
-        // Step 4: Generate Refresh Token
-        const refreshToken = generateRefreshToken(user);
+        // Refresh token (7 दिन)
+        const refreshToken = jwt.sign(
+            { id: user.id },
+            process.env.JWT_REFRESH_SECRET,
+            { expiresIn: "7d" }
+        );
 
-        // Step 5: Store Refresh Token in HttpOnly Cookie
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-            path: "/api/auth/refresh"
-        });
+        // Refresh token को database में सेव करो
+        user.refreshToken = refreshToken;
+        await user.save();
 
-        // Step 6: Send response
         res.status(200).json({
             message: "Login successful",
-            accessToken
+            accessToken,
+            refreshToken
         });
 
     } catch (error) {
         console.log(error.message);
-
         res.status(500).json({
             message: "Server error"
         });
     }
 };
 
-module.exports = {
-    register,
-    login
+// ---------------------------------------------
+// REFRESH (नया access token देना)
+// ---------------------------------------------
+const refresh = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(401).json({
+                message: "Refresh token required"
+            });
+        }
+
+        // token असली और expire नहीं है?
+        const decoded = jwt.verify(
+            refreshToken,
+            process.env.JWT_REFRESH_SECRET
+        );
+
+        // database वाला token वही है?
+        const user = await User.findById(decoded.id);
+
+        if (!user || user.refreshToken !== refreshToken) {
+            return res.status(403).json({
+                message: "Invalid refresh token"
+            });
+        }
+
+        // नया access token
+        const accessToken = jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "15m" }
+        );
+
+        res.status(200).json({ accessToken });
+
+    } catch (error) {
+        res.status(403).json({
+            message: "Invalid or expired refresh token"
+        });
+    }
 };
+const logout = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(400).json({
+                message: "Refresh token required"
+            });
+        }
+
+        // इस token वाला user ढूँढो और token हटा दो
+        const user = await User.findOne({ refreshToken });
+
+        if (user) {
+            user.refreshToken = null;
+            await user.save();
+        }
+
+        res.status(200).json({
+            message: "Logged out successfully"
+        });
+
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({
+            message: "Server error"
+        });
+    }
+};
+
+module.exports = { register, login, refresh, logout };

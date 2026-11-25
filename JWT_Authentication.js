@@ -71,6 +71,7 @@ const authMiddleware = (req, res, next) => {
             return res.status(401).json({
                 message: "Token not provided"
             });
+   
         }
 
         const token = authHeader.

@@ -8,11 +8,12 @@ let users=[
         email:"john.doe@example.com"
     },
     {
+    
         id:2,
         name:"Jane Smith",
         email:"jane.gmail.com"
     }
-
+ 
 ];
 app.post("/users", (req, res) => {
   const newUser = { id: Date.now(), name: req.body.name };
