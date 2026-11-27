@@ -6,6 +6,8 @@ const {
     updateNote,
     deleteNote
 } = require("../controllers/noteController");
+const { body } = require("express-validator");
+const validate = require("../middleware/validate");
 
 const router = express.Router();
 
